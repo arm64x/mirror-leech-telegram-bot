@@ -11,7 +11,20 @@ from bot import LOGGER, subprocess_lock, DOWNLOAD_DIR
 from .bot_utils import cmd_exec, sync_to_async
 from .files_utils import ARCH_EXT, get_mime_type
 
-
+def sanitize_filename(filename, max_length=255):
+    """
+    Làm sạch và rút ngắn tên file để tránh lỗi tên file quá dài
+    """
+    # Loại bỏ các ký tự đặc biệt và không mong muốn
+    filename = "".join(c for c in filename if c.isalnum() or c in (' ', '.', '_', '-'))
+    
+    # Nếu tên file vẫn dài quá, cắt ngắn
+    if len(filename) > max_length:
+        name, ext = ospath.splitext(filename)
+        filename = name[:max_length - len(ext)] + ext
+    
+    return filename
+    
 async def convert_video(listener, video_file, ext, retry=False):
     base_name = ospath.splitext(video_file)[0]
     output = f"{base_name}.{ext}"
@@ -407,6 +420,10 @@ async def split_file(
     inLoop=False,
     multi_streams=True,
 ):
+    # Làm sạch tên file
+    file_ = sanitize_filename(file_)
+    path = sanitize_filename(path)
+    
     if listener.seed and not listener.new_dir:
         dirpath = f"{dirpath}/splited_files_mltb"
         await makedirs(dirpath, exist_ok=True)
